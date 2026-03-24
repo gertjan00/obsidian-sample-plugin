@@ -71,4 +71,8 @@ export class MyPluginSettingTab extends PluginSettingTab {
 					});
 			});
 	}
+
+	async connect(): Promise<boolean> {
+		return true;
+	}
 }
