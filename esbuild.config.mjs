@@ -12,7 +12,7 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = process.argv[2] === "production";
 
-let vaultPath = "C:/Dev/Obsidian/Main/.obsidian/plugins/appwrite-obsidian-sync"; // Use forward slashes!
+let vaultPath = "C:/Dev/Obsidian/Main/.obsidian/plugins/appwrite-obsidian-sync"; //  Use forward slashes!
 
 const copyBuildToObsidian = {
 	name: "copy-to-obsidian",
