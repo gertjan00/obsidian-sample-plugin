@@ -14,7 +14,7 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addSettingTab(new MyPluginSettingTab(this.app, this));
-		this.appwrite = new AppwriteService();
+		this.appwrite = new AppwriteService(this.settings);
 	}
 
 	onunload() {}
