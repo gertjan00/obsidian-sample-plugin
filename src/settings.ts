@@ -95,12 +95,8 @@ export class MyPluginSettingTab extends PluginSettingTab {
 					.setButtonText("Update")
 					.setCta()
 					.onClick(async () => {
-						await this.updateDatabase();
+						await this.plugin.appwrite.prepareDatabase();
 					});
 			});
-	}
-
-	async updateDatabase(): Promise<void> {
-		await this.plugin.appwrite.prepareDatabase();
 	}
 }

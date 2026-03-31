@@ -1,5 +1,6 @@
 import { requestUrl, RequestUrlParam, Notice } from "obsidian";
 import { MyPluginSettings } from "settings";
+import { AppwriteAPI } from "types/appwrite-api";
 
 export class AppwriteService {
 	private settings: MyPluginSettings;
@@ -8,27 +9,41 @@ export class AppwriteService {
 		this.settings = settings;
 	}
 
-	private async adminRequest(method: string, path: string, body?: any) {
-		const url = `${this.settings.appwriteEndpoint}${path}`;
-
-		const params: RequestUrlParam = {
-			url: url,
-			method: method,
-			headers: {
-				"Content-Type": "application/json",
-				"X-Appwrite-Project": this.settings.appwriteProjectId,
-				"X-Appwrite-Key": this.settings.appwriteApiKey,
-			},
-			body: body ? JSON.stringify(body) : undefined,
-		};
-
+	private async adminRequest<
+		P extends keyof AppwriteAPI,
+		M extends keyof AppwriteAPI[P] & string,
+	>(
+		path: P,
+		method: M,
+		body?: AppwriteAPI[P][M] extends { body: infer B } ? B : undefined,
+	): Promise<AppwriteAPI[P][M] extends { response: infer R } ? R : any> {
 		try {
-			const response = await requestUrl(params);
-			return response.json;
-		} catch (error) {
-			console.error("Appwrite Admin Request Error:", error);
-			new Notice("error.toString()");
-			throw error;
+			const res = await requestUrl({
+				url: `${this.settings.appwriteEndpoint}${path}`,
+				method: method,
+				headers: {
+					"Content-Type": "application/json",
+					"X-Appwrite-Project": this.settings.appwriteProjectId,
+					"X-Appwrite-Key": this.settings.appwriteApiKey,
+				},
+				body: body ? JSON.stringify(body) : undefined,
+			});
+
+			return res.json;
+		} catch (e) {
+			let msg;
+
+			if (e instanceof Error) {
+				msg = e.message;
+			} else if (e) {
+				msg = e.toString();
+			} else {
+				msg = "Onbekende fout";
+			}
+
+			throw new Error(
+				`Appwrite adminRequest error op ${method} - ${path}: ${msg}`,
+			);
 		}
 	}
 
@@ -39,7 +54,7 @@ export class AppwriteService {
 		}
 
 		try {
-			const data = await this.adminRequest("GET", "/databases");
+			const data = await this.adminRequest("/databases", "GET");
 
 			if (data.databases) {
 				new Notice(
@@ -58,7 +73,7 @@ export class AppwriteService {
 
 	async prepareDatabase(): Promise<void> {
 		try {
-			await this.adminRequest("POST", "/databases", {
+			await this.adminRequest("/databases", "POST", {
 				databaseId: "test",
 				name: "test",
 			});
