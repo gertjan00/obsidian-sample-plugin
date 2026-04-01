@@ -1,3 +1,4 @@
+// settings.ts
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import MyPlugin from "./main";
 import { FirstSyncModal } from "ui/FirstSyncModal";
@@ -102,15 +103,15 @@ export class MyPluginSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Run first sync")
 			.setDesc(
-				"Choose if you want to pull from, or push to the Server (merge not yet available)",
+				"Choose if you want to pull from, or push to the server (merge not yet available)",
 			)
 			.addButton((button) => {
 				button
 					.setCta()
 					.setButtonText("Sync")
 					.onClick(async () => {
-						new FirstSyncModal(this.app, (lorem) => {
-							new Notice(lorem);
+						new FirstSyncModal(this.app, (resultaat) => {
+							new Notice(resultaat);
 						}).open();
 					});
 			});
