@@ -28,8 +28,8 @@ export class FirstSyncModal extends Modal {
 					.addOption("pull", "Pull from Server")
 					.addOption("push", "Push to Server")
 					.setValue(this.currentDirection)
-					.onChange((value: SyncDirection) => {
-						this.currentDirection = value;
+					.onChange((value) => {
+						this.currentDirection = value as SyncDirection;
 					});
 			});
 

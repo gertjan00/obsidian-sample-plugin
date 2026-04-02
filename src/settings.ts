@@ -2,6 +2,7 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import MyPlugin from "./main";
 import { FirstSyncModal } from "ui/FirstSyncModal";
+import { ConfirmModal } from "ui/ConfirmModal";
 
 export interface MyPluginSettings {
 	appwriteEndpoint: string;
@@ -111,6 +112,37 @@ export class MyPluginSettingTab extends PluginSettingTab {
 						new FirstSyncModal(
 							this.app,
 							async (resultaat) => {},
+						).open();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Reset appwrite")
+			.setDesc("This will delete ALL data in Appwrite!")
+			.addButton((button) => {
+				button
+					.setButtonText("delete")
+					.setWarning()
+					.onClick(() => {
+						new ConfirmModal(
+							this.app,
+							"Are you really, really sure?",
+							"This will really delete all data on your Appwrite server!!",
+							async () => {
+								const dbList =
+									await this.plugin.appwrite.listDatabases();
+
+								dbList.databases.forEach(async (db) => {
+									try {
+										console.log(`"${db.name}" verwijderen`);
+										await this.plugin.appwrite.deleteDatabase(
+											db.$id,
+										);
+									} catch (e: any) {
+										if (e) console.error(e);
+									}
+								});
+							},
 						).open();
 					});
 			});
