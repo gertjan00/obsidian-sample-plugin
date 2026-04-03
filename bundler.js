@@ -3,7 +3,6 @@ import path from "path";
 
 const SRC_DIR = path.join(process.cwd(), "src");
 
-// Bestanden/folders die je meestal niet wilt meenemen
 const IGNORE_DIRS = new Set([
 	"node_modules",
 	".git",
@@ -90,9 +89,7 @@ function isProbablyTextFile(filePath) {
 		const clipboardyModule = await import("clipboardy");
 		await clipboardyModule.default.write(output);
 
-		console.log(
-			`Klaar. ${allFiles.length} bestanden uit /src staan nu op je clipboard.`,
-		);
+		console.log(`${allFiles.length} bestanden gebundeld`);
 	} catch (error) {
 		console.error("Fout bij bundelen:", error);
 		process.exit(1);
