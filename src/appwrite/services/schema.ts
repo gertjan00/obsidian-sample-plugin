@@ -4,6 +4,8 @@ import { Models } from "node-appwrite";
 export class AppwriteSchemaService {
 	constructor(private readonly http: AppwriteHttpService) {}
 
+	async checkSchema(): Promise<void> {}
+
 	async listTeams(): Promise<Models.TeamList> {
 		return await this.http.request("GET", `/teams`);
 	}
