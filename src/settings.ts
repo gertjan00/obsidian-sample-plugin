@@ -1,4 +1,3 @@
-// settings.ts
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import MyPlugin from "./main";
 import { FirstSyncModal } from "ui/FirstSyncModal";
@@ -128,11 +127,13 @@ export class MyPluginSettingTab extends PluginSettingTab {
 					.setButtonText("delete")
 					.setWarning()
 					.onClick(() => {
-						new ConfirmModal(
-							this.app,
-							"Are you really, really sure?",
-							"This will really delete all data on your Appwrite server!!",
-							async () => {
+						new ConfirmModal(this.app, {
+							title: "Are you really, really sure?",
+							message:
+								"This will really delete all data on your Appwrite server!!",
+							countdown: 10,
+							setWarning: true,
+							onConfirm: async () => {
 								const dbList =
 									await this.plugin.appwrite.schema.listDatabases();
 
@@ -147,7 +148,7 @@ export class MyPluginSettingTab extends PluginSettingTab {
 									}
 								});
 							},
-						).open();
+						}).open();
 					});
 			});
 	}
