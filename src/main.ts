@@ -6,6 +6,7 @@ import {
 } from "./settings";
 import { AppwriteService } from "appwrite/client";
 import { FirstSyncModal } from "ui/FirstSyncModal";
+import { template } from "types/schema-template";
 
 export default class MyPlugin extends Plugin {
 	public settings!: MyPluginSettings;
@@ -15,14 +16,17 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addSettingTab(new MyPluginSettingTab(this.app, this));
-		this.appwrite = new AppwriteService(this.settings);
-		if (!this.settings.initialSyncDone) {
-			new FirstSyncModal(
-				this.app,
-				this.appwrite.schema,
-				this.appwrite.sync,
-			).open();
-		}
+		this.appwrite = new AppwriteService(this.settings, this.app);
+
+		// if (!this.settings.initialSyncDone) {
+		// 	new FirstSyncModal(
+		// 		this.app,
+		// 		this.appwrite.schema,
+		// 		this.appwrite.sync,
+		// 	).open();
+		// }
+
+		navigator.clipboard.writeText(JSON.stringify(template, null, 2));
 	}
 
 	onunload() {}

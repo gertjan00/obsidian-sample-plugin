@@ -2,52 +2,31 @@ import { AppwriteHttpService } from "./http";
 import { Models } from "node-appwrite";
 
 import { template } from "types/schema-template";
+import { SyncLogger } from "types/synclogger";
 
 export class AppwriteSchemaService {
 	constructor(private readonly http: AppwriteHttpService) {}
 
-	async updateSchema(contentEl?: HTMLDivElement): Promise<void> {
+	async updateSchema(logger?: SyncLogger): Promise<void> {
 		console.log("Updating schema");
 
-		const logMessage = (
-			msg: string,
-			indentation: number,
-			color: string = "#d1d1d1",
-		) => {
-			if (contentEl) {
-				contentEl.createEl("div", {
-					attr: {
-						style: `
-							color: ${color}; 
-							margin: 0; 
-							white-space: pre-wrap; 
-							padding-left: ${indentation * 8}px;
-							border-left: ${indentation > 0 ? "1px solid #" : "none"};
-							margin-bottom: 2px;
-						`,
-					},
-					text:
-						(indentation === 0 ? "> " : " ".repeat(indentation)) +
-						msg,
-				});
-
-				contentEl.scrollTop = contentEl.scrollHeight;
-			}
-			console.log(msg);
+		const log = (msg: string, indent: number = 0, color?: string) => {
+			if (logger) logger.log(msg, indent, color);
 		};
-		logMessage("Database resetten", 0);
+
+		log("Database resetten", 0);
 		await this.resetAll();
 		await sleep(1000);
 
-		logMessage("Starting setup database", 0);
+		log("Starting setup database", 0);
 
 		for (const db of template.databases) {
 			try {
-				logMessage(` - creating database '${db.id}'`, 0);
+				log(` - creating database '${db.id}'`, 0);
 				await this.createDatabase(db.id, db.name);
 			} catch (e: any) {
 				if (e.status == 404 || e.status == 409) {
-					logMessage(` - database '${db.id}' already exists.`, 2);
+					log(` - database '${db.id}' already exists.`, 2);
 				} else {
 					console.error(e);
 				}
@@ -55,13 +34,13 @@ export class AppwriteSchemaService {
 
 			for (const table of db.tables) {
 				try {
-					logMessage(` - creating table '${table.id}'`, 2);
+					log(` - creating table '${table.id}'`, 2);
 					await this.createTable(db.id, table.id, table.name);
 				} catch (e: any) {
 					if (e.status == 404 || e.status == 409) {
-						logMessage(` - table '${table.id}' already exists.`, 4);
+						log(` - table '${table.id}' already exists.`, 4);
 					} else {
-						logMessage(e, 4);
+						log(e, 4);
 					}
 				}
 
@@ -71,26 +50,23 @@ export class AppwriteSchemaService {
 						const body: any = { ...column };
 						delete body.type;
 
-						logMessage(
+						log(
 							` - creating column '${column.key}' (${column.type})`,
 							4,
 						);
 						await this.http.request("POST", url, body);
 					} catch (e: any) {
 						if (e.status == 404 || e.status == 409) {
-							logMessage(
-								` - column '${column.key}' already exists.`,
-								6,
-							);
+							log(` - column '${column.key}' already exists.`, 6);
 						} else {
-							logMessage(e, 6);
+							log(e, 6);
 						}
 					}
 					await sleep(50);
 				}
 			}
 		}
-		logMessage("Updating schema finished", 0);
+		log("Updating schema finished", 0);
 	}
 
 	async listTeams(): Promise<Models.TeamList> {

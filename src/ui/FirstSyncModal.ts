@@ -2,6 +2,7 @@
 import { AppwriteSchemaService } from "appwrite/services/schema";
 import { AppwriteSyncService } from "appwrite/services/sync";
 import { App, ButtonComponent, Modal, Notice, Setting } from "obsidian";
+import { SyncLogger } from "types/synclogger";
 
 export class FirstSyncModal extends Modal {
 	constructor(
@@ -25,17 +26,15 @@ export class FirstSyncModal extends Modal {
 					.setCta()
 					.onClick(async (evt) => {
 						const buttonEl = evt.currentTarget as HTMLButtonElement;
-						buttonEl.disabled = true; // Voorkom dubbelklikken
+						buttonEl.disabled = true;
 						buttonEl.innerText = "Syncing...";
 
-						// 1. Container voor de terminal (nodig voor de absolute positionering van de kopieerknop)
 						const terminalWrapper = contentEl.createEl("div", {
 							attr: {
 								style: "position: relative; margin-top: 20px;",
 							},
 						});
 
-						// 2. De Terminal zelf
 						const terminal = terminalWrapper.createEl("div", {
 							attr: {
 								style: `
@@ -54,9 +53,35 @@ export class FirstSyncModal extends Modal {
 							},
 						});
 
-						// 3. De Kopieer-knop (altijd zichtbaar rechtsboven)
+						const logger: SyncLogger = {
+							log: (
+								msg: string,
+								indentation: number = 0,
+								color: string = "#d1d1d1",
+							) => {
+								terminal.createEl("div", {
+									attr: {
+										style: `
+											color: ${color}; 
+											margin: 0; 
+											white-space: pre-wrap; 
+											padding-left: ${indentation * 8}px;
+											border-left: ${indentation > 0 ? "1px solid #" : "none"};
+											margin-bottom: 2px;
+										`,
+									},
+									text:
+										(indentation === 0
+											? "> "
+											: " ".repeat(indentation)) + msg,
+								});
+								terminal.scrollTop = terminal.scrollHeight;
+								console.log(msg);
+							},
+						};
+
 						const copyBtn = terminalWrapper.createEl("button", {
-							text: "Copy Logs",
+							text: "Copy",
 							attr: {
 								style: "position: absolute; top: 8px; right: 8px; font-size: 0.7em; padding: 2px 8px; opacity: 0.6;",
 							},
@@ -66,8 +91,8 @@ export class FirstSyncModal extends Modal {
 							new Notice("Logs copied to clipboard");
 						});
 
-						// Start de actie
-						await this.schema.updateSchema(terminal);
+						// await this.schema.updateSchema(logger);
+						await this.sync.pushAllFiles(logger);
 
 						buttonEl.innerText = "Sync Finished";
 					});

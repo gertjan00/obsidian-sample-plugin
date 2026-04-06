@@ -117,7 +117,7 @@ export const template: TSchema = {
 				{
 					id: "files",
 					name: "Files",
-					permission: ["team:vault_users"],
+					permission: ["team:members"],
 					rowSecurity: false,
 					columns: [
 						stringColumn({
@@ -156,7 +156,7 @@ export const template: TSchema = {
 				{
 					id: "presence",
 					name: "Presence",
-					permission: ["team:vault_users"],
+					permission: ["team:members"],
 					rowSecurity: false,
 					columns: [
 						stringColumn({
