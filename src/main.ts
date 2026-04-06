@@ -5,6 +5,7 @@ import {
 	MyPluginSettingTab,
 } from "./settings";
 import { AppwriteService } from "appwrite/client";
+import { FirstSyncModal } from "ui/FirstSyncModal";
 
 export default class MyPlugin extends Plugin {
 	public settings!: MyPluginSettings;
@@ -16,9 +17,7 @@ export default class MyPlugin extends Plugin {
 		this.addSettingTab(new MyPluginSettingTab(this.app, this));
 		this.appwrite = new AppwriteService(this.settings);
 		if (!this.settings.initialSyncDone) {
-			await this.appwrite.schema.resetAll(); // alleen tijdens ontwikkelen
-			await new Promise((resolve) => window.setTimeout(resolve, 1000));
-			await this.appwrite.schema.updateSchema(); // alleen tijdens ontwikkelen
+			new FirstSyncModal(this.app, this.appwrite.schema).open();
 		}
 	}
 

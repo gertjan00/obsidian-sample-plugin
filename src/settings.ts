@@ -113,12 +113,7 @@ export class MyPluginSettingTab extends PluginSettingTab {
 				button
 					.setCta()
 					.setButtonText("Sync")
-					.onClick(() => {
-						new FirstSyncModal(
-							this.app,
-							async (resultaat) => {},
-						).open();
-					});
+					.onClick(() => {});
 			});
 
 		new Setting(containerEl)

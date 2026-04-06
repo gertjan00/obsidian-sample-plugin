@@ -6,47 +6,91 @@ import { template } from "types/schema-template";
 export class AppwriteSchemaService {
 	constructor(private readonly http: AppwriteHttpService) {}
 
-	async updateSchema(): Promise<void> {
+	async updateSchema(contentEl?: HTMLDivElement): Promise<void> {
 		console.log("Updating schema");
 
-		for (const templateDb of template.databases) {
-			try {
-				console.log(" - creating database:", templateDb.id);
-				await this.createDatabase(templateDb.id, templateDb.name);
-			} catch (e: any) {
-				console.error(e);
-			}
+		const logMessage = (
+			msg: string,
+			indentation: number,
+			color: string = "#d1d1d1",
+		) => {
+			if (contentEl) {
+				contentEl.createEl("div", {
+					attr: {
+						style: `
+							color: ${color}; 
+							margin: 0; 
+							white-space: pre-wrap; 
+							padding-left: ${indentation * 8}px;
+							border-left: ${indentation > 0 ? "1px solid #" : "none"};
+							margin-bottom: 2px;
+						`,
+					},
+					text:
+						(indentation === 0 ? "> " : " ".repeat(indentation)) +
+						msg,
+				});
 
-			for (const templateTable of templateDb.tables) {
-				try {
-					console.log("   - creating table:", templateTable.id);
-					await this.createTable(
-						templateDb.id,
-						templateTable.id,
-						templateTable.name,
-					);
-				} catch (e: any) {
+				contentEl.scrollTop = contentEl.scrollHeight;
+			}
+			console.log(msg);
+		};
+		logMessage("Database resetten", 0);
+		await this.resetAll();
+		await sleep(1000);
+
+		logMessage("Starting setup database", 0);
+
+		for (const db of template.databases) {
+			try {
+				logMessage(` - creating database '${db.id}'`, 0);
+				await this.createDatabase(db.id, db.name);
+			} catch (e: any) {
+				if (e.status == 404 || e.status == 409) {
+					logMessage(` - database '${db.id}' already exists.`, 2);
+				} else {
 					console.error(e);
 				}
+			}
 
-				for (const templateColumn of templateTable.columns) {
+			for (const table of db.tables) {
+				try {
+					logMessage(` - creating table '${table.id}'`, 2);
+					await this.createTable(db.id, table.id, table.name);
+				} catch (e: any) {
+					if (e.status == 404 || e.status == 409) {
+						logMessage(` - table '${table.id}' already exists.`, 4);
+					} else {
+						logMessage(e, 4);
+					}
+				}
+
+				for (const column of table.columns) {
 					try {
-						const url = `/tablesdb/${templateDb.id}/tables/${templateTable.id}/columns/${templateColumn.type}`;
-						const body: any = { ...templateColumn };
+						const url = `/tablesdb/${db.id}/tables/${table.id}/columns/${column.type}`;
+						const body: any = { ...column };
 						delete body.type;
 
-						console.log(
-							"     - creating column:",
-							templateColumn.key,
+						logMessage(
+							` - creating column '${column.key}' (${column.type})`,
+							4,
 						);
 						await this.http.request("POST", url, body);
 					} catch (e: any) {
-						console.error(e);
+						if (e.status == 404 || e.status == 409) {
+							logMessage(
+								` - column '${column.key}' already exists.`,
+								6,
+							);
+						} else {
+							logMessage(e, 6);
+						}
 					}
+					await sleep(50);
 				}
 			}
 		}
-		console.log("Updating schema finished");
+		logMessage("Updating schema finished", 0);
 	}
 
 	async listTeams(): Promise<Models.TeamList> {
