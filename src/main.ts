@@ -17,7 +17,11 @@ export default class MyPlugin extends Plugin {
 		this.addSettingTab(new MyPluginSettingTab(this.app, this));
 		this.appwrite = new AppwriteService(this.settings);
 		if (!this.settings.initialSyncDone) {
-			new FirstSyncModal(this.app, this.appwrite.schema).open();
+			new FirstSyncModal(
+				this.app,
+				this.appwrite.schema,
+				this.appwrite.sync,
+			).open();
 		}
 	}
 

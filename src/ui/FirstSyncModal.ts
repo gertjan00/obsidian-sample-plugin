@@ -12,10 +12,6 @@ export class FirstSyncModal extends Modal {
 		super(app);
 	}
 
-	async sleep(duration: number) {
-		await new Promise((resolve) => window.setTimeout(resolve, duration));
-	}
-
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
