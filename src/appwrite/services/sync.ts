@@ -1,6 +1,6 @@
 import { Vault, TFile, Notice } from "obsidian";
 import { AppwriteHttpService } from "./http";
-import { SyncLogger } from "types/synclogger";
+import { SyncLogger } from "types/sync-logger";
 
 export class AppwriteSyncService {
 	constructor(
@@ -8,17 +8,18 @@ export class AppwriteSyncService {
 		private http: AppwriteHttpService,
 	) {}
 
-	async pushAllFiles(logger?: SyncLogger) {
-		const log = (msg: string, indentation: number, color?: string) => {
-			if (logger) logger.log(msg, indentation, color);
-		};
-
+	async pushAllFiles(syncLogger?: SyncLogger) {
+		const log = syncLogger || (() => {});
 		const databaseId: string = "obsidian";
 		const collectionId: string = "files";
 
-		const files = this.vault.getFiles();
-		log(`${files.length} files found locally.`, 0);
+		const files = this.vault
+			.getFiles()
+			.sort((a, b) => (a.path > b.path ? 1 : -1));
+
 		log("Start uploading files...", 0);
+		log(`${files.length} files found locally.`, 0);
+
 		await sleep(1000);
 
 		let i = 1;

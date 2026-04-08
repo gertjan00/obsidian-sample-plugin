@@ -2,7 +2,7 @@
 import { AppwriteSchemaService } from "appwrite/services/schema";
 import { AppwriteSyncService } from "appwrite/services/sync";
 import { App, ButtonComponent, Modal, Notice, Setting } from "obsidian";
-import { SyncLogger } from "types/synclogger";
+import { SyncLogger } from "types/sync-logger";
 
 export class FirstSyncModal extends Modal {
 	constructor(
@@ -53,15 +53,14 @@ export class FirstSyncModal extends Modal {
 							},
 						});
 
-						const logger: SyncLogger = {
-							log: (
-								msg: string,
-								indentation: number = 0,
-								color: string = "#d1d1d1",
-							) => {
-								terminal.createEl("div", {
-									attr: {
-										style: `
+						const syncLogger: SyncLogger = (
+							msg: string,
+							indentation: number = 0,
+							color: string = "#d1d1d1",
+						) => {
+							terminal.createEl("div", {
+								attr: {
+									style: `
 											color: ${color}; 
 											margin: 0; 
 											white-space: pre-wrap; 
@@ -69,21 +68,21 @@ export class FirstSyncModal extends Modal {
 											border-left: ${indentation > 0 ? "1px solid #" : "none"};
 											margin-bottom: 2px;
 										`,
-									},
-									text:
-										(indentation === 0
-											? "> "
-											: " ".repeat(indentation)) + msg,
-								});
-								terminal.scrollTop = terminal.scrollHeight;
-								console.log(msg);
-							},
+								},
+								text:
+									(indentation === 0
+										? "> "
+										: " ".repeat(indentation)) + msg,
+							});
+							terminal.scrollTop = terminal.scrollHeight;
+							console.log(msg);
 						};
 
 						const copyBtn = terminalWrapper.createEl("button", {
 							text: "Copy",
+							cls: "button",
 							attr: {
-								style: "position: absolute; top: 8px; right: 8px; font-size: 0.7em; padding: 2px 8px; opacity: 0.6;",
+								style: "position: absolute; top: 8px; right: 8px; cursor: pointer; opacity: 0.8",
 							},
 						});
 						copyBtn.onClickEvent(() => {
@@ -92,9 +91,10 @@ export class FirstSyncModal extends Modal {
 						});
 
 						// await this.schema.updateSchema(logger);
-						await this.sync.pushAllFiles(logger);
+						await this.schema.createSchema(syncLogger);
+						await this.sync.pushAllFiles(syncLogger);
 
-						buttonEl.innerText = "Sync Finished";
+						buttonEl.remove();
 					});
 			})
 			.addButton((button) => {

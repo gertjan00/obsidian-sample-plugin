@@ -2,17 +2,15 @@ import { AppwriteHttpService } from "./http";
 import { Models } from "node-appwrite";
 
 import { template } from "types/schema-template";
-import { SyncLogger } from "types/synclogger";
+import { SyncLogger } from "types/sync-logger";
 
 export class AppwriteSchemaService {
 	constructor(private readonly http: AppwriteHttpService) {}
 
-	async updateSchema(logger?: SyncLogger): Promise<void> {
+	async createSchema(syncLogger?: SyncLogger): Promise<void> {
 		console.log("Updating schema");
 
-		const log = (msg: string, indent: number = 0, color?: string) => {
-			if (logger) logger.log(msg, indent, color);
-		};
+		const log = syncLogger || (() => {});
 
 		log("Database resetten", 0);
 		await this.resetAll();
@@ -62,34 +60,9 @@ export class AppwriteSchemaService {
 							log(e, 6);
 						}
 					}
-					await sleep(50);
 				}
 			}
 		}
-		log("Updating schema finished", 0);
-	}
-
-	async listTeams(): Promise<Models.TeamList> {
-		return await this.http.request("GET", `/teams`);
-	}
-
-	async getTeam(teamId: string): Promise<Models.Team> {
-		return await this.http.request("GET", `/teams/${teamId}`);
-	}
-
-	async createTeam(teamId: string, name: string): Promise<Models.Team> {
-		return await this.http.request("POST", `/teams`, {
-			teamId: teamId,
-			name: name,
-		});
-	}
-
-	async listDatabases(): Promise<Models.DatabaseList> {
-		return await this.http.request("GET", `/tablesdb/`);
-	}
-
-	async getDatabase(databaseId: string): Promise<Models.Database> {
-		return await this.http.request("GET", `/tablesdb/${databaseId}`);
 	}
 
 	async createDatabase(
@@ -100,17 +73,6 @@ export class AppwriteSchemaService {
 			databaseId: databaseId,
 			name: name,
 		});
-	}
-
-	async getTable(databaseId: string, tableId: string): Promise<Models.Table> {
-		return await this.http.request(
-			"GET",
-			`/tablesdb/${databaseId}/tables/${tableId}`,
-		);
-	}
-
-	async listTables(databaseId: string): Promise<Models.TableList> {
-		return await this.http.request("GET", `/tablesdb/${databaseId}/tables`);
 	}
 
 	// TODO verder invullen. deze functie kan je pas uitvoeren als er een team is aangemaakt
@@ -137,19 +99,18 @@ export class AppwriteSchemaService {
 
 	// DANGER ZONE
 
-	async deleteDatabase(databaseId: string): Promise<void> {
-		await this.http.request("DELETE", `/tablesdb/${databaseId}`);
-	}
-
 	// Deze functie alleen tijdens testen gebruiken
 	async resetAll() {
 		console.info("Start reset alles");
-		const dbList = await this.listDatabases();
+		const dbList: Models.DatabaseList = await this.http.request(
+			"GET",
+			`/tablesdb/`,
+		);
 
-		dbList.databases.forEach(async (db) => {
+		dbList.databases.forEach(async (database) => {
 			try {
-				console.log(`"${db.name}" verwijderen`);
-				await this.deleteDatabase(db.$id);
+				console.log(`"${database.name}" verwijderen`);
+				await this.http.request("DELETE", `/tablesdb/${database.$id}`);
 			} catch (e: any) {
 				if (e) console.error(e);
 			}
