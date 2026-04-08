@@ -31,7 +31,7 @@ export class AppwriteHttpService {
 			});
 
 			if (!res.text || res.text.trim() === "") {
-				return undefined as unknown as TResponse;
+				return undefined as TResponse;
 			}
 
 			return res.json as TResponse;
@@ -60,18 +60,33 @@ export class AppwriteHttpService {
 		return await this.request("POST", `/tablesdb/${databaseId}/tables`, {
 			tableId: tableId,
 			name: name,
-			permissions: ['read("any")'],
+			permissions: [],
 			rowSecurity: false,
 			enabled: false,
-			columns: [],
-			indexes: [],
 		});
 	};
 
-	createSchema = async (syncLogger?: SyncLogger): Promise<void> => {
-		console.log("Updating schema");
+	createBucket = async (bucketId: string, name: string) => {
+		const url = "/storage/buckets";
 
+		try {
+			await this.request("POST", url, { bucketId: bucketId, name: name });
+		} catch (e: any) {
+			if (e.status == 409) {
+			} else {
+				console.error(e);
+			}
+		}
+	};
+
+	createSchema = async (syncLogger?: SyncLogger): Promise<void> => {
 		const log = syncLogger || (() => {});
+
+		log("Creating bucket for binary files...");
+		this.createBucket(
+			template.buckets.first()!.bucketId,
+			template.buckets.first()!.name,
+		);
 
 		log("Database resetten", 0);
 		await this.resetAll();

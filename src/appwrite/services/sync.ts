@@ -1,6 +1,7 @@
-import { Vault, TFile } from "obsidian";
+import { Vault, TFile, Notice } from "obsidian";
 import { AppwriteHttpService } from "./http";
 import { SyncLogger } from "types/sync-logger";
+import { Query } from "node-appwrite";
 
 export class AppwriteSyncService {
 	constructor(
@@ -45,6 +46,14 @@ export class AppwriteSyncService {
 		databaseId: string,
 		collectionId: string,
 	) => {
+		const isBinary = ["md", "canvas", "txt"].includes(file.extension);
+
+		if (isBinary) {
+			const arrayBuffer = await this.vault.readBinary(file);
+			const blob = new Blob([arrayBuffer]);
+			const appwriteFile = new File([blob], file.name);
+		}
+
 		const content = await this.vault.read(file);
 		const stats = file.stat;
 
@@ -63,9 +72,35 @@ export class AppwriteSyncService {
 		return await this.http.request("POST", url, payload);
 	};
 
-	pullAllFiles = async ($id: string) => {
-		const url = `/tablesdb/obsidian/tables/files`;
-		const files = await this.http.request("GET", url);
-		console.log(files);
+	pullAllFiles = async () => {
+		new Notice("Pulling files...");
+		const url = `/tablesdb/obsidian/tables/files/rows?total=${false}&queries[]=${[Query.limit(999999999)]}`;
+
+		const files: any = await this.http.request("GET", url);
+
+		for (const file of files.rows) {
+			this.pullFile(file);
+		}
+
+		new Notice("Pull files finished");
+		return files;
+	};
+
+	pullFile = async (file: any) => {
+		const parentFolders = file.path.split("/").slice(0, -1);
+
+		// Create parent folders
+		let currentPath = "";
+		for (const folder of parentFolders) {
+			try {
+				await this.vault.createFolder(`${currentPath}/${folder}`);
+			} catch {}
+			currentPath += `/${folder}`;
+		}
+
+		// Create file
+		try {
+			await this.vault.create(file.path, file.content);
+		} catch {}
 	};
 }

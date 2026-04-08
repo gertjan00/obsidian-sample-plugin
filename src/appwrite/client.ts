@@ -10,11 +10,13 @@ export class AppwriteService {
 	public pushAllFiles;
 	public pullAllFiles;
 	public createSchema;
+	public createBucket;
 
 	constructor(settings: MyPluginSettings, app: App) {
 		this.http = new AppwriteHttpService(settings);
 		this.sync = new AppwriteSyncService(app.vault, this.http);
 
+		this.createBucket = this.http.createBucket;
 		this.createSchema = this.http.createSchema;
 		this.pushAllFiles = this.sync.pushAllFiles;
 		this.pullAllFiles = this.sync.pullAllFiles;

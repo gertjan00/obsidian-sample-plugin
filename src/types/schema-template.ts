@@ -1,4 +1,10 @@
 export const template = {
+	buckets: [
+		{
+			bucketId: "binary_files",
+			name: "Binary Files",
+		},
+	],
 	databases: [
 		{
 			id: "obsidian",
