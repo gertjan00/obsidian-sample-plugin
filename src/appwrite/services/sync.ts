@@ -1,4 +1,4 @@
-import { Vault, TFile, Notice } from "obsidian";
+import { Vault, TFile } from "obsidian";
 import { AppwriteHttpService } from "./http";
 import { SyncLogger } from "types/sync-logger";
 
@@ -8,7 +8,7 @@ export class AppwriteSyncService {
 		private http: AppwriteHttpService,
 	) {}
 
-	async pushAllFiles(syncLogger?: SyncLogger) {
+	pushAllFiles = async (syncLogger?: SyncLogger) => {
 		const log = syncLogger || (() => {});
 		const databaseId: string = "obsidian";
 		const collectionId: string = "files";
@@ -17,6 +17,7 @@ export class AppwriteSyncService {
 			.getFiles()
 			.sort((a, b) => (a.path > b.path ? 1 : -1));
 
+		log("");
 		log("Start uploading files...", 0);
 		log(`${files.length} files found locally.`, 0);
 
@@ -37,14 +38,18 @@ export class AppwriteSyncService {
 				i++;
 			}
 		}
-	}
+	};
 
-	async pushFile(file: TFile, databaseId: string, collectionId: string) {
+	pushFile = async (
+		file: TFile,
+		databaseId: string,
+		collectionId: string,
+	) => {
 		const content = await this.vault.read(file);
 		const stats = file.stat;
 
 		const payload = {
-			documentId: "unique()",
+			rowId: "unique()",
 			data: {
 				path: file.path,
 				content: content,
@@ -54,7 +59,13 @@ export class AppwriteSyncService {
 			},
 		};
 
-		const url = `/databases/${databaseId}/collections/${collectionId}/documents`;
+		const url = `/tablesdb/${databaseId}/tables/${collectionId}/rows`;
 		return await this.http.request("POST", url, payload);
-	}
+	};
+
+	pullAllFiles = async ($id: string) => {
+		const url = `/tablesdb/obsidian/tables/files`;
+		const files = await this.http.request("GET", url);
+		console.log(files);
+	};
 }

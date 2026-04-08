@@ -1,14 +1,13 @@
-// FirstSyncModal.ts
-import { AppwriteSchemaService } from "appwrite/services/schema";
 import { AppwriteSyncService } from "appwrite/services/sync";
-import { App, ButtonComponent, Modal, Notice, Setting } from "obsidian";
+import { App, Modal, Notice, Setting } from "obsidian";
 import { SyncLogger } from "types/sync-logger";
+import { AppwriteHttpService } from "appwrite/services/http";
+import { AppwriteService } from "appwrite/client";
 
 export class FirstSyncModal extends Modal {
 	constructor(
 		app: App,
-		private schema: AppwriteSchemaService,
-		private sync: AppwriteSyncService,
+		private appwrite: AppwriteService,
 	) {
 		super(app);
 	}
@@ -28,6 +27,10 @@ export class FirstSyncModal extends Modal {
 						const buttonEl = evt.currentTarget as HTMLButtonElement;
 						buttonEl.disabled = true;
 						buttonEl.innerText = "Syncing...";
+						new Notice(
+							"You can close this modal if you want, you'll get notified when it's finished",
+							10000,
+						);
 
 						const terminalWrapper = contentEl.createEl("div", {
 							attr: {
@@ -91,8 +94,8 @@ export class FirstSyncModal extends Modal {
 						});
 
 						// await this.schema.updateSchema(logger);
-						await this.schema.createSchema(syncLogger);
-						await this.sync.pushAllFiles(syncLogger);
+						await this.appwrite.createSchema(syncLogger);
+						await this.appwrite.pushAllFiles(syncLogger);
 
 						buttonEl.remove();
 					});

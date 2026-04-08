@@ -18,13 +18,11 @@ export default class MyPlugin extends Plugin {
 		this.addSettingTab(new MyPluginSettingTab(this.app, this));
 		this.appwrite = new AppwriteService(this.settings, this.app);
 
-		if (!this.settings.initialSyncDone) {
-			new FirstSyncModal(
-				this.app,
-				this.appwrite.schema,
-				this.appwrite.sync,
-			).open();
+		if (false && !this.settings.initialSyncDone) {
+			new FirstSyncModal(this.app, this.appwrite).open();
 		}
+
+		await this.appwrite.pullAllFiles("obsidian");
 
 		navigator.clipboard.writeText(JSON.stringify(template, null, 2));
 	}

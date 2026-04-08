@@ -81,20 +81,6 @@ export class MyPluginSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Test verbinding met Appwrite")
-			.setDesc(
-				"Doet een count van je aantal databases in je project (zou 1 moeten zijn)",
-			)
-			.addButton((button) => {
-				button
-					.setButtonText("Test")
-					.setCta()
-					.onClick(async () => {
-						await this.plugin.appwrite.testConnection();
-					});
-			});
-
-		new Setting(containerEl)
 			.setName("Update database schema")
 			.setDesc("Werkt het schema bij in de database.")
 			.addButton((button) => {
