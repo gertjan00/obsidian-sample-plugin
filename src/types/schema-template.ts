@@ -11,6 +11,26 @@ export const template = {
 			name: "Obsidian",
 			tables: [
 				{
+					id: "settings",
+					name: "Settings",
+					permission: ["team:members"],
+					rowSecurity: false,
+					columns: [
+						{
+							key: "key",
+							size: 128,
+							required: true,
+							type: "string",
+						},
+						{
+							key: "value",
+							size: 1024,
+							required: true,
+							type: "string",
+						},
+					],
+				},
+				{
 					id: "files",
 					name: "Files",
 					permission: ["team:members"],

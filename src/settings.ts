@@ -6,10 +6,12 @@ import {
 	setIcon,
 	ButtonComponent,
 	Notice,
+	SecretStorage,
 } from "obsidian";
 import MyPlugin from "./main";
 import { FirstSyncModal } from "ui/FirstSyncModal";
 import { ConfirmModal } from "ui/ConfirmModal";
+import { Account, Client } from "appwrite";
 
 interface Tab {
 	id: string;
@@ -23,18 +25,18 @@ export interface MyPluginSettings {
 	appwriteEndpoint: string;
 	appwriteProjectId: string;
 	appwriteApiKey: string;
-	connected: boolean;
-	initialSyncDone: boolean;
-	syncPlugins: boolean;
+
+	onboardingCompleted: boolean;
+	deviceId: string;
 }
 
 export const DEFAULT_SETTINGS: MyPluginSettings = {
 	appwriteEndpoint: "https://appwrite.zalmhuys.com/v1", // "https://<REGION>.cloud.appwrite.io/v1",
 	appwriteProjectId: "69c315ee003c738bed8e", // ""
 	appwriteApiKey: "",
-	connected: false,
-	initialSyncDone: false,
-	syncPlugins: false,
+
+	onboardingCompleted: false,
+	deviceId: "",
 };
 
 export class MyPluginSettingTab extends PluginSettingTab {
@@ -59,6 +61,174 @@ export class MyPluginSettingTab extends PluginSettingTab {
 			},
 		});
 
+		// Onboarding
+		if (!this.plugin.settings.onboardingCompleted) {
+			const validateSettings = (): void => {
+				const errors: string[] = [];
+
+				const { appwriteEndpoint, appwriteProjectId, appwriteApiKey } =
+					this.plugin.settings;
+
+				if (
+					appwriteEndpoint.trim() == "" ||
+					appwriteProjectId.trim() == ""
+				) {
+					errors.push("Please provide your endpoint and project id");
+					return;
+				}
+
+				if (!appwriteEndpoint.startsWith("https")) {
+					errors.push("Endpoint must start with 'https'");
+				}
+
+				if (!appwriteEndpoint.endsWith("/v1")) {
+					errors.push("Endpoint must end with '/v1'");
+				}
+
+				try {
+					new URL(appwriteEndpoint);
+				} catch {
+					errors.push("Endpoint is not a valid url");
+				}
+
+				// set login button
+				if (errors.length > 0) {
+					loginButton.setDisabled(true).setTooltip("asdf", {
+						delay: -1,
+					});
+				}
+
+				const apiKey =
+					this.plugin.app.secretStorage.getSecret(appwriteApiKey);
+				if (!apiKey) {
+					errors.push("API key is required");
+				}
+
+				const apiKeyValid = (async () => {
+					await this.plugin.appwrite.testApiKey();
+				})();
+				if (apiKey && !apiKeyValid) {
+					errors.push(
+						"API key is not valid or does not have the required scopes",
+					);
+				}
+
+				// set create workspace button
+				if (errors.length > 0) {
+					createWorkspaceButton.setDisabled(true).setTooltip("asdf", {
+						delay: -1,
+					});
+				}
+			};
+
+			new Setting(containerEl)
+				.setName("Appwrite Endpoint")
+				.setDesc(
+					"The url to reach your Appwrite project (should end with /v1).",
+				)
+				.addText((input) => {
+					input
+						.setValue(this.plugin.settings.appwriteEndpoint)
+						.onChange(async (value) => {
+							this.plugin.settings.appwriteEndpoint = value;
+							await this.plugin.saveSettings();
+							validateSettings();
+						});
+				});
+
+			new Setting(containerEl)
+				.setName("Appwrite Project")
+				.setDesc(
+					"The id of your Appwrite project. Default is 20 characters",
+				)
+				.addText((input) => {
+					input
+						.setValue(this.plugin.settings.appwriteProjectId)
+						.onChange(async (value) => {
+							this.plugin.settings.appwriteProjectId = value;
+							await this.plugin.saveSettings();
+							validateSettings();
+						});
+				});
+
+			let loginButton: ButtonComponent;
+			new Setting(containerEl)
+				.setName("Login to existing workspace.")
+				.setDesc("Requires an invitelink")
+				.addButton((b) => {
+					loginButton = b;
+
+					b.setCta()
+						.setButtonText("Login")
+						.onClick(async () => {
+							new Notice(this.plugin.settings.appwriteEndpoint);
+							new Notice(this.plugin.settings.appwriteProjectId);
+							const { appwriteEndpoint, appwriteProjectId } =
+								this.plugin.settings;
+
+							const client = new Client()
+								.setEndpoint(appwriteEndpoint)
+								.setProject(appwriteProjectId);
+
+							const account = new Account(client);
+
+							try {
+								await account.deleteSessions();
+							} catch (e: any) {
+								console.log(e.message);
+							}
+						});
+				});
+
+			new Setting(containerEl)
+				.setHeading()
+				.setName("If this is your first device:");
+
+			new Setting(containerEl)
+				.setName("Appwrite API key")
+				.setDesc(
+					"Will be stored securely on your device. Needed for initial setup and advanced features.",
+				)
+				.addComponent((el) =>
+					new SecretComponent(this.app, el)
+						.setValue(this.plugin.settings.appwriteApiKey)
+						.onChange(async (value) => {
+							this.plugin.settings.appwriteApiKey = value;
+							await this.plugin.saveSettings();
+
+							let connected: boolean = false;
+							if (value) {
+								connected =
+									await this.plugin.appwrite.testApiKey();
+								new Notice(
+									`Api key ${!connected ? "is not " : "is"} valid!`,
+								);
+							}
+
+							new Notice(
+								`Advanced features are now ${value && connected ? "enabled" : "disabled"}.`,
+							);
+
+							this.display();
+						}),
+				);
+
+			let createWorkspaceButton: ButtonComponent;
+			new Setting(containerEl)
+				.setName("Create a new workspace.")
+				.setDesc(
+					"Requires an API key of your Appwrite project with permissions for Auth, Database and Storage ",
+				)
+				.addButton((b) => {
+					createWorkspaceButton = b;
+					b.setWarning().setButtonText("Create");
+				});
+
+			validateSettings();
+			return;
+		}
+
+		// Main
 		const headerEl = containerEl.createDiv({
 			cls: "tab-header",
 		});
@@ -137,87 +307,15 @@ export class MyPluginSettingTab extends PluginSettingTab {
 	}
 
 	private renderGeneralSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName("Project details").setHeading();
-
-		new Setting(containerEl)
-			.setName("Appwrite Endpoint")
-			.setDesc(
-				"The url to reach your Appwrite project (should end with /v1).",
-			)
-			.addText((input) => {
-				input
-					.setValue(this.plugin.settings.appwriteEndpoint)
-					.onChange(async (value) => {
-						this.plugin.settings.appwriteEndpoint = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(containerEl)
-			.setName("Appwrite Project")
-			.setDesc(
-				"The id of your Appwrite project. Default is 20 characters",
-			)
-			.addText((input) => {
-				input
-					.setValue(this.plugin.settings.appwriteProjectId)
-					.onChange(async (value) => {
-						this.plugin.settings.appwriteProjectId = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
 		new Setting(containerEl)
 			.setName("Unlock advanced features")
 			.setHeading();
-
-		new Setting(containerEl)
-			.setName("Appwrite API key")
-			.setDesc(
-				"Will be stored securely on your device. Needed for initial setup and advanced features.",
-			)
-			.addComponent((el) =>
-				new SecretComponent(this.app, el)
-					.setValue(this.plugin.settings.appwriteApiKey)
-					.onChange(async (value) => {
-						this.plugin.settings.appwriteApiKey = value;
-						await this.plugin.saveSettings();
-
-						let connected: boolean = false;
-						if (value) {
-							connected = await this.plugin.appwrite.testApiKey();
-							new Notice(
-								`Api key ${!connected ? "is not " : "is"} valid!`,
-							);
-						}
-
-						new Notice(
-							`Advanced features are now ${value && connected ? "enabled" : "disabled"}.`,
-						);
-
-						this.display();
-					}),
-			);
 	}
 
 	private renderPreferenceSettings(containerEl: HTMLElement) {
 		containerEl.createEl("p", {
 			text: "These settings are shared accross users and devices.",
 		});
-
-		new Setting(containerEl)
-			.setName("Sync plugins")
-			.setDesc(
-				"Wheter or not you want to sync plugins accross all devices",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.syncPlugins)
-					.onChange((value) => {
-						this.plugin.settings.syncPlugins = value;
-						this.plugin.saveSettings();
-					});
-			});
 	}
 
 	private renderTeamSettings(containerEl: HTMLElement) {
