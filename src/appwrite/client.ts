@@ -12,6 +12,7 @@ export class AppwriteService {
 	public createSchema;
 	public createBucket;
 	public testApiKey;
+	public registerUser;
 
 	constructor(settings: MyPluginSettings, app: App) {
 		this.http = new AppwriteHttpService(settings, app.secretStorage);
@@ -20,6 +21,7 @@ export class AppwriteService {
 		this.createBucket = this.http.createBucket;
 		this.createSchema = this.http.createSchema;
 		this.testApiKey = this.http.testApiKey;
+		this.registerUser = this.http.registerUser;
 
 		this.pushAllFiles = this.sync.pushAllFiles;
 		this.pullAllFiles = this.sync.pullAllFiles;

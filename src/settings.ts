@@ -12,6 +12,8 @@ import MyPlugin from "./main";
 import { FirstSyncModal } from "ui/FirstSyncModal";
 import { ConfirmModal } from "ui/ConfirmModal";
 import { Account, Client } from "appwrite";
+import { DynamicModal } from "ui/DynamicModal";
+import { RegisterModal } from "ui/RegisterModal";
 
 interface Tab {
 	id: string;
@@ -74,14 +76,13 @@ export class MyPluginSettingTab extends PluginSettingTab {
 					appwriteProjectId.trim() == ""
 				) {
 					errors.push("Please provide your endpoint and project id");
-					return;
 				}
 
 				if (!appwriteEndpoint.startsWith("https")) {
 					errors.push("Endpoint must start with 'https'");
 				}
 
-				if (!appwriteEndpoint.endsWith("/v1")) {
+				if (!appwriteEndpoint.toLowerCase().trim().endsWith("/v1")) {
 					errors.push("Endpoint must end with '/v1'");
 				}
 
@@ -93,9 +94,13 @@ export class MyPluginSettingTab extends PluginSettingTab {
 
 				// set login button
 				if (errors.length > 0) {
-					loginButton.setDisabled(true).setTooltip("asdf", {
-						delay: -1,
-					});
+					loginButton
+						.setDisabled(true)
+						.setTooltip(errors.join("\n"), {
+							delay: -1,
+						});
+				} else {
+					loginButton.setDisabled(false).setTooltip("");
 				}
 
 				const apiKey =
@@ -115,9 +120,15 @@ export class MyPluginSettingTab extends PluginSettingTab {
 
 				// set create workspace button
 				if (errors.length > 0) {
-					createWorkspaceButton.setDisabled(true).setTooltip("asdf", {
-						delay: -1,
-					});
+					createWorkspaceButton
+						.setDisabled(true)
+						.setTooltip(errors.join("\n"), {
+							delay: -1,
+						});
+				} else {
+					createWorkspaceButton
+						.setDisabled(false)
+						.setTooltip(errors.join(""));
 				}
 			};
 
@@ -127,11 +138,12 @@ export class MyPluginSettingTab extends PluginSettingTab {
 					"The url to reach your Appwrite project (should end with /v1).",
 				)
 				.addText((input) => {
+					input.inputEl.addClass("aos-wide-input");
 					input
 						.setValue(this.plugin.settings.appwriteEndpoint)
-						.onChange(async (value) => {
+						.onChange((value) => {
 							this.plugin.settings.appwriteEndpoint = value;
-							await this.plugin.saveSettings();
+							this.plugin.saveSettings();
 							validateSettings();
 						});
 				});
@@ -142,6 +154,7 @@ export class MyPluginSettingTab extends PluginSettingTab {
 					"The id of your Appwrite project. Default is 20 characters",
 				)
 				.addText((input) => {
+					input.inputEl.addClass("aos-wide-input");
 					input
 						.setValue(this.plugin.settings.appwriteProjectId)
 						.onChange(async (value) => {
@@ -171,12 +184,6 @@ export class MyPluginSettingTab extends PluginSettingTab {
 								.setProject(appwriteProjectId);
 
 							const account = new Account(client);
-
-							try {
-								await account.deleteSessions();
-							} catch (e: any) {
-								console.log(e.message);
-							}
 						});
 				});
 
@@ -221,7 +228,17 @@ export class MyPluginSettingTab extends PluginSettingTab {
 				)
 				.addButton((b) => {
 					createWorkspaceButton = b;
-					b.setWarning().setButtonText("Create");
+					b.setWarning()
+						.setButtonText("Create")
+						.onClick(() => {
+							new RegisterModal(
+								this.app,
+								this.plugin.appwrite,
+								() => {
+									new Notice("Start database inrichten...");
+								},
+							).open();
+						});
 				});
 
 			validateSettings();

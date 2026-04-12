@@ -42,6 +42,15 @@ export class AppwriteHttpService {
 		}
 	};
 
+	registerUser = async (email: string, password: string): Promise<any> => {
+		return await this.request("POST", "/account", {
+			userId: "unique()",
+			email: email,
+			password: password,
+			name: email.split("@")[0],
+		});
+	};
+
 	testApiKey = async (): Promise<boolean> => {
 		try {
 			await this.request("GET", "/health/queue/stats-usage");
