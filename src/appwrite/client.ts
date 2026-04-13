@@ -1,29 +1,36 @@
-import { App } from "obsidian";
+import { App, SecretStorage } from "obsidian";
 import { MyPluginSettings } from "settings";
-import { AppwriteHttpService } from "./services/http";
-import { AppwriteSyncService } from "./services/sync";
+import { ObsidianAdminClient, ObsidianUserClient } from "./obsidian-clients";
 
 export class AppwriteService {
-	private http: AppwriteHttpService;
-	private sync: AppwriteSyncService;
+	private admin: ObsidianAdminClient;
+	private user: ObsidianUserClient;
+	private secretStorage: SecretStorage;
 
-	public pushAllFiles;
-	public pullAllFiles;
-	public createSchema;
-	public createBucket;
-	public testApiKey;
-	public registerUser;
+	constructor(
+		private settings: MyPluginSettings,
+		app: App,
+	) {
+		this.admin = new ObsidianAdminClient();
+		this.user = new ObsidianUserClient();
+		this.secretStorage = app.secretStorage;
+	}
 
-	constructor(settings: MyPluginSettings, app: App) {
-		this.http = new AppwriteHttpService(settings, app.secretStorage);
-		this.sync = new AppwriteSyncService(app.vault, this.http);
+	reconfigure() {
+		this.user
+			.setEndpoint(this.settings.appwriteEndpoint)
+			.setProject(this.settings.appwriteProjectId);
 
-		this.createBucket = this.http.createBucket;
-		this.createSchema = this.http.createSchema;
-		this.testApiKey = this.http.testApiKey;
-		this.registerUser = this.http.registerUser;
+		this.admin
+			.setEndpoint(this.settings.appwriteEndpoint)
+			.setProject(this.settings.appwriteProjectId);
 
-		this.pushAllFiles = this.sync.pushAllFiles;
-		this.pullAllFiles = this.sync.pullAllFiles;
+		const apiKey = this.secretStorage.getSecret(
+			this.settings.appwriteApiKey,
+		);
+
+		if (apiKey) {
+			this.admin.setKey(apiKey);
+		}
 	}
 }

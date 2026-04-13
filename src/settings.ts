@@ -234,7 +234,8 @@ export class MyPluginSettingTab extends PluginSettingTab {
 							new RegisterModal(
 								this.app,
 								this.plugin.appwrite,
-								() => {
+								(user) => {
+									console.log(user);
 									new Notice("Start database inrichten...");
 								},
 							).open();

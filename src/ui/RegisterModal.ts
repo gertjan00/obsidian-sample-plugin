@@ -1,5 +1,6 @@
 import { App, Modal, Setting, Notice, ButtonComponent } from "obsidian";
 import { AppwriteService } from "appwrite/client";
+import { Models } from "node-appwrite";
 
 export class RegisterModal extends Modal {
 	private email = "";
@@ -10,7 +11,7 @@ export class RegisterModal extends Modal {
 	constructor(
 		app: App,
 		private appwrite: AppwriteService,
-		private onSuccess: () => void,
+		private onSuccess: (user: Models.Session) => void,
 	) {
 		super(app);
 	}
@@ -68,9 +69,14 @@ export class RegisterModal extends Modal {
 							this.password,
 						);
 						new Notice("Account created successfully!");
+						const user =
+							await this.appwrite.createEmailPasswordSession(
+								this.email,
+								this.password,
+							);
 
 						this.close();
-						this.onSuccess();
+						this.onSuccess(user);
 					} catch (e: any) {
 						console.error(e);
 						new Notice(

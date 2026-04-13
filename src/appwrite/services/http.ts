@@ -51,6 +51,16 @@ export class AppwriteHttpService {
 		});
 	};
 
+	createEmailPasswordSession = async (
+		email: string,
+		password: string,
+	): Promise<Models.Session> => {
+		return await this.request("POST", "/account/sessions/email", {
+			email: email,
+			password: password,
+		});
+	};
+
 	testApiKey = async (): Promise<boolean> => {
 		try {
 			await this.request("GET", "/health/queue/stats-usage");
