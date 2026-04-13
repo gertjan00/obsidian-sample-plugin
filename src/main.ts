@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Plugin, requestUrl } from "obsidian";
 import {
 	MyPluginSettings,
 	DEFAULT_SETTINGS,
@@ -7,7 +7,7 @@ import {
 import { AppwriteService } from "appwrite/client";
 import { FirstSyncModal } from "ui/FirstSyncModal";
 import { template } from "types/schema-template";
-import { Account, Client } from "appwrite";
+import { Account, Client, ID, Storage } from "appwrite";
 
 export default class MyPlugin extends Plugin {
 	public settings!: MyPluginSettings;
@@ -23,12 +23,16 @@ export default class MyPlugin extends Plugin {
 			.setEndpoint(this.settings.appwriteEndpoint)
 			.setProject(this.settings.appwriteProjectId);
 		const account = new Account(client);
-		const user = await account.createEmailPasswordSession({
-			email: "asdf@asdf.nl",
-			password: "12345678",
-		});
-
-		console.log(user);
+		try {
+			const user = await account.create({
+				userId: ID.unique(),
+				email: "email@example.com",
+				password: "12345678",
+			});
+			console.log(user);
+		} catch (e) {
+			console.error(e);
+		}
 	}
 
 	onunload() {}

@@ -1,4 +1,4 @@
-import { Models } from "node-appwrite";
+import { Models, TablesDB } from "node-appwrite";
 import { requestUrl, SecretStorage } from "obsidian";
 import { MyPluginSettings } from "settings";
 import { template } from "types/schema-template";
