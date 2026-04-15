@@ -1,5 +1,5 @@
 import { ObsidianAdminClient } from "appwrite/obsidian-clients";
-import { Models, Storage, TablesDB } from "node-appwrite";
+import { AppwriteException, Models, Storage, TablesDB } from "node-appwrite";
 import { template } from "types/schema-template";
 import { SyncLogger } from "types/sync-logger";
 import { never } from "utils";
@@ -40,10 +40,20 @@ export class AppwriteAdminService {
 		log("Creating bucket for binary files...");
 
 		for (const bucket of template.buckets) {
-			await storage.createBucket({
-				bucketId: bucket.bucketId,
-				name: bucket.name,
-			});
+			try {
+				await storage.createBucket({
+					bucketId: bucket.bucketId,
+					name: bucket.name,
+				});
+			} catch (e: any) {
+				if (e instanceof AppwriteException) {
+					console.error(
+						"Error while creating bucket",
+						e.code,
+						e.message,
+					);
+				}
+			}
 		}
 
 		log("Database resetten", 0);
@@ -54,10 +64,21 @@ export class AppwriteAdminService {
 		for (const db of template.databases) {
 			try {
 				log(` - creating database '${db.id}'`, 0);
-				await tablesDB.create({
-					databaseId: db.id,
-					name: db.name,
-				});
+
+				try {
+					await tablesDB.create({
+						databaseId: db.id,
+						name: db.name,
+					});
+				} catch (e: any) {
+					if (e instanceof AppwriteException) {
+						console.error(
+							"Error while creating database",
+							e.code,
+							e.message,
+						);
+					}
+				}
 			} catch (e: any) {
 				if (e.status == 404 || e.status == 409) {
 					log(` - database '${db.id}' already exists.`, 2);
@@ -69,11 +90,22 @@ export class AppwriteAdminService {
 			for (const table of db.tables) {
 				try {
 					log(` - creating table '${table.id}'`, 2);
-					await tablesDB.createTable({
-						databaseId: db.id,
-						tableId: table.id,
-						name: table.id,
-					});
+
+					try {
+						await tablesDB.createTable({
+							databaseId: db.id,
+							tableId: table.id,
+							name: table.id,
+						});
+					} catch (e: any) {
+						if (e instanceof AppwriteException) {
+							console.error(
+								"Error while creating table",
+								e.code,
+								e.message,
+							);
+						}
+					}
 				} catch (e: any) {
 					if (e.status == 404 || e.status == 409) {
 						log(` - table '${table.id}' already exists.`, 4);
@@ -88,11 +120,22 @@ export class AppwriteAdminService {
 							` - creating column '${column.key}' (${column.type})`,
 							4,
 						);
-						this.createColumn({
-							databaseId: db.id,
-							tableId: table.id,
-							column: column,
-						});
+
+						try {
+							await this.createColumn({
+								databaseId: db.id,
+								tableId: table.id,
+								column: column,
+							});
+						} catch (e: any) {
+							if (e instanceof AppwriteException) {
+								console.error(
+									"Error while creating column",
+									e.code,
+									e.message,
+								);
+							}
+						}
 					} catch (e: any) {
 						if (e.status == 404 || e.status == 409) {
 							log(` - column '${column.key}' already exists.`, 6);

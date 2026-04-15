@@ -1,13 +1,9 @@
 import { Vault, TFile, Notice } from "obsidian";
-import { AppwriteHttpService } from "./http";
 import { SyncLogger } from "types/sync-logger";
 import { Query } from "node-appwrite";
 
 export class AppwriteSyncService {
-	constructor(
-		private vault: Vault,
-		private http: AppwriteHttpService,
-	) {}
+	constructor(private vault: Vault) {}
 
 	pushAllFiles = async (syncLogger?: SyncLogger) => {
 		const log = syncLogger || (() => {});
@@ -69,14 +65,14 @@ export class AppwriteSyncService {
 		};
 
 		const url = `/tablesdb/${databaseId}/tables/${collectionId}/rows`;
-		return await this.http.request("POST", url, payload);
+		return;
 	};
 
 	pullAllFiles = async () => {
 		new Notice("Pulling files...");
 		const url = `/tablesdb/obsidian/tables/files/rows?total=${false}&queries[]=${[Query.limit(999999999)]}`;
 
-		const files: any = await this.http.request("GET", url);
+		const files: any = {};
 
 		for (const file of files.rows) {
 			this.pullFile(file);
