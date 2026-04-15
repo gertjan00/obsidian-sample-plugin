@@ -24,6 +24,11 @@ export default class MyPlugin extends Plugin {
 		console.log("start updateSchema()");
 		await this.appwrite.admin.updateSchema();
 		console.log("einde updateSchema()");
+
+		await sleep(2000);
+		console.log("Start pushAllFiles()");
+		await this.appwrite.sync.pushAllFiles();
+		console.log("Einde pushAllFiles()");
 	}
 
 	async onunload() {

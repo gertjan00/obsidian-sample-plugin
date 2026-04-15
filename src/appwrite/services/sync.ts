@@ -1,15 +1,20 @@
 import { Vault, TFile, Notice } from "obsidian";
 import { SyncLogger } from "types/sync-logger";
 import { Query } from "node-appwrite";
-import { databases } from "generated/appwrite";
+import { databases, DatabaseTables } from "generated/appwrite";
 
 export class AppwriteSyncService {
-	constructor(private vault: Vault) {}
+	constructor(
+		private vault: Vault,
+		private databases: DatabaseTables,
+	) {}
 
 	pushAllFiles = async (syncLogger?: SyncLogger) => {
-		const log = syncLogger || (() => {});
-		const databaseId: string = "obsidian";
-		const collectionId: string = "files";
+		const log =
+			syncLogger ||
+			((message) => {
+				console.log(message);
+			});
 
 		const files = this.vault
 			.getFiles()
@@ -39,27 +44,15 @@ export class AppwriteSyncService {
 	};
 
 	pushFile = async (file: TFile) => {
-		const isBinary = ["md", "canvas", "txt"].includes(file.extension);
+		const filesTable = this.databases.use("obsidian").use("files");
 
-		if (isBinary) {
-			const arrayBuffer = await this.vault.readBinary(file);
-			const blob = new Blob([arrayBuffer]);
-			const appwriteFile = new File([blob], file.name);
-		}
-
-		const content = await this.vault.read(file);
-		const stats = file.stat;
-
-		const payload = {
-			rowId: "unique()",
-			data: {
-				path: file.path,
-				content: content,
-				last_modified_by: "Obsidian_Client",
-				last_modified_at: new Date(stats.mtime).toISOString(),
-				checksum: stats.size.toString(),
-			},
-		};
+		await filesTable.create({
+			path: file.path,
+			content: await this.vault.read(file),
+			checksum: "3",
+			last_modified_by: "obsidian client",
+			last_modified_at: new Date(file.stat.mtime).toISOString(),
+		});
 
 		return;
 	};

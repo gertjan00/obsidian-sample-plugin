@@ -3,6 +3,7 @@ import { MyPluginSettings } from "settings";
 import { ObsidianAdminClient, ObsidianUserClient } from "./obsidian-clients";
 import { AppwriteAdminService } from "./services/admin";
 import { AppwriteUserService } from "./services/user";
+import { AppwriteSyncService } from "./services/sync";
 
 export class AppwriteService {
 	private userClient: ObsidianUserClient;
@@ -11,6 +12,7 @@ export class AppwriteService {
 
 	public admin: AppwriteAdminService;
 	public user: AppwriteUserService;
+	public sync: AppwriteSyncService;
 
 	constructor(
 		private settings: MyPluginSettings,
@@ -23,6 +25,8 @@ export class AppwriteService {
 
 		this.adminClient = new ObsidianAdminClient();
 		this.admin = new AppwriteAdminService(this.adminClient);
+
+		this.sync = new AppwriteSyncService(app.vault, this.admin.databases);
 	}
 
 	reconfigure() {

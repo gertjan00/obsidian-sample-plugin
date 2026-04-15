@@ -1,4 +1,6 @@
 import { ObsidianAdminClient } from "appwrite/obsidian-clients";
+import { DatabaseTables } from "generated/appwrite";
+import { createDatabasesApi } from "generated/appwrite/databases";
 import { AppwriteException, Models, Storage, TablesDB } from "node-appwrite";
 import { template } from "types/schema-template";
 import { SyncLogger } from "types/sync-logger";
@@ -27,10 +29,12 @@ interface createColumnProps<D extends TDatabaseId, T extends TTableId<D>> {
 export class AppwriteAdminService {
 	public tablesDB: TablesDB;
 	public storage: Storage;
+	public databases: DatabaseTables;
 
 	constructor(adminClient: ObsidianAdminClient) {
 		this.tablesDB = new TablesDB(adminClient);
 		this.storage = new Storage(adminClient);
+		this.databases = createDatabasesApi(this.tablesDB as any);
 	}
 
 	updateSchema = async (syncLogger?: SyncLogger): Promise<void> => {
