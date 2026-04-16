@@ -74,6 +74,11 @@ async function appwriteCall(
 		...headers,
 	};
 
+	const storedCookie = window.localStorage.getItem("cookieFallback");
+	if (storedCookie && !mergedHeaders["X-Fallback-Cookies"]) {
+		mergedHeaders["X-Fallback-Cookies"] = storedCookie;
+	}
+
 	const upperMethod = method.toUpperCase();
 	const options: RequestUrlParam = {
 		url: url.toString(),

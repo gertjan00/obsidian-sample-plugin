@@ -15,12 +15,21 @@ export default class MyPlugin extends Plugin {
 		this.addSettingTab(new MyPluginSettingTab(this));
 		this.appwrite = new AppwriteService(this.settings, this.app);
 		this.appwrite.reconfigure();
+
+		try {
+			const res = await this.appwrite.user.account.get();
+			console.log(res);
+			this.settings.loggedIn = true;
+		} catch (e: any) {
+			this.settings.loggedIn = false;
+			console.log(e?.message);
+		} finally {
+			this.saveSettings();
+		}
 		//
 	}
 
-	async onunload() {
-		this.appwrite.admin.deleteAll();
-	}
+	async onunload() {}
 
 	async loadSettings() {
 		this.settings = Object.assign(
